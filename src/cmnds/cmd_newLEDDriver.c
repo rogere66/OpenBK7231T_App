@@ -250,7 +250,15 @@ void apply_smart_light() {
 			raw = baseColors[i];
 
 			if(g_lightEnableAll) {
-				final = raw * g_brightness;
+				// make brightness exponential:
+				float exponential_brightness = pow(1.04723f, g_brightness * 100.0f) / 100.0f - 0.00947f;
+				if (exponential_brightness < 0.001f)
+					exponential_brightness = 0.0f;
+
+				if (exponential_brightness > 1.0f)
+					exponential_brightness = 1.0f;
+
+				final = raw * exponential_brightness;
 			} else {
 				final = 0;
 			}
