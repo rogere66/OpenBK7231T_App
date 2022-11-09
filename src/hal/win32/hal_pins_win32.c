@@ -41,7 +41,7 @@ void HAL_PIN_PWM_Stop(int pinIndex) {
 void HAL_PIN_PWM_Start(int index) {
 
 }
-void HAL_PIN_PWM_Update(int index, int value) {
+void HAL_PIN_PWM_Update(int index, float value) {
 
 
 }
