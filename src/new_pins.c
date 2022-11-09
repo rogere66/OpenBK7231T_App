@@ -68,7 +68,7 @@ char g_enable_pins = 0;
 
 // it was nice to have it as bits but now that we support PWM...
 //int g_channelStates;
-int g_channelValues[CHANNEL_MAX] = { 0 };
+float g_channelValues[CHANNEL_MAX] = { 0 };
 
 pinButton_s g_buttons[PLATFORM_GPIO_MAX];
 
@@ -533,7 +533,7 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 		case IOR_PWM:
 			{
 				int channelIndex;
-				int channelValue;
+				float channelValue;
 
 				channelIndex = PIN_GetPinChannelForPinIndex(index);
 				channelValue = g_channelValues[channelIndex];
@@ -563,7 +563,7 @@ void Channel_SaveInFlashIfNeeded(int ch) {
 		HAL_FlashVars_SaveChannel(ch,g_channelValues[ch]);
 	}
 }
-static void Channel_OnChanged(int ch, int prevValue, int iFlags) {
+static void Channel_OnChanged(int ch, float prevValue, int iFlags) {
 	int i;
 	int iVal;
 	int bOn;
@@ -646,7 +646,7 @@ int CHANNEL_Get(int ch) {
 	return g_channelValues[ch];
 }
 
-void CHANNEL_Set(int ch, int iVal, int iFlags) {
+void CHANNEL_Set(int ch, float iVal, int iFlags) {
 	int prevValue;
 	int bForce;
 	int bSilent;
@@ -689,7 +689,7 @@ void CHANNEL_Set(int ch, int iVal, int iFlags) {
 	Channel_OnChanged(ch,prevValue,iFlags);
 }
 void CHANNEL_AddClamped(int ch, int iVal, int min, int max) {
-	int prevValue;
+	float prevValue;
 	if(ch < 0 || ch >= CHANNEL_MAX) {
 		addLogAdv(LOG_ERROR, LOG_FEATURE_GENERAL,"CHANNEL_AddClamped: Channel index %i is out of range <0,%i)\n\r",ch,CHANNEL_MAX);
 		return;
@@ -707,7 +707,7 @@ void CHANNEL_AddClamped(int ch, int iVal, int min, int max) {
 	Channel_OnChanged(ch,prevValue,0);
 }
 void CHANNEL_Add(int ch, int iVal) {
-	int prevValue;
+	float prevValue;
 	if(ch < 0 || ch >= CHANNEL_MAX) {
 		addLogAdv(LOG_ERROR, LOG_FEATURE_GENERAL,"CHANNEL_Add: Channel index %i is out of range <0,%i)\n\r",ch,CHANNEL_MAX);
 		return;
@@ -745,7 +745,7 @@ int CHANNEL_FindMaxValueForChannel(int ch) {
 // PWMs are toggled between 0 and 100 (0% and 100% PWM)
 // Relays and everything else is toggled between 0 (off) and 1 (on)
 void CHANNEL_Toggle(int ch) {
-	int prev;
+	float prev;
 
 	// special channels
 	if(ch == SPECIAL_CHANNEL_LEDPOWER) {
@@ -1219,7 +1219,7 @@ static int CMD_ShowChannelValues(const void *context, const char *cmd, const cha
 
 	for(i = 0; i < CHANNEL_MAX; i++) {
 		if(g_channelValues[i] > 0) {
-			addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"Channel %i value is %i", i, g_channelValues[i]);
+			addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"Channel %i value is %f", i, g_channelValues[i]);
 		}
 	}
 
