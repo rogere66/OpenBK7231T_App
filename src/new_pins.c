@@ -68,7 +68,7 @@ char g_enable_pins = 0;
 
 // it was nice to have it as bits but now that we support PWM...
 //int g_channelStates;
-float g_channelValues[CHANNEL_MAX] = { 0 };
+float g_channelValues[CHANNEL_MAX] = { 0.0f };
 
 pinButton_s g_buttons[PLATFORM_GPIO_MAX];
 
@@ -565,7 +565,7 @@ void Channel_SaveInFlashIfNeeded(int ch) {
 }
 static void Channel_OnChanged(int ch, float prevValue, int iFlags) {
 	int i;
-	int iVal;
+	float iVal;
 	int bOn;
 	int bCallCb = 0;
 
@@ -647,7 +647,7 @@ int CHANNEL_Get(int ch) {
 }
 
 void CHANNEL_Set(int ch, float iVal, int iFlags) {
-	int prevValue;
+	float prevValue;
 	int bForce;
 	int bSilent;
 	bForce = iFlags & CHANNEL_SET_FLAG_FORCE;
