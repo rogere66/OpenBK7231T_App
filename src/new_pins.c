@@ -683,13 +683,13 @@ void CHANNEL_Set(int ch, float iVal, int iFlags) {
 	if(bForce == 0) {
 		if(prevValue == iVal) {
 			if(bSilent==0) {
-				addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"No change in channel %i (still set to %i) - ignoring\n\r",ch, prevValue);
+				addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"No change in channel %i (still set to %f) - ignoring\n\r",ch, prevValue);
 			}
 			return;
 		}
 	}
 	if(bSilent==0) {
-		addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_Set channel %i has changed to %i (flags %i)\n\r",ch,iVal,iFlags);
+		addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_Set channel %i has changed to %f (flags %i)\n\r",ch,iVal,iFlags);
 	}
 	g_channelValues[ch] = iVal;
 
