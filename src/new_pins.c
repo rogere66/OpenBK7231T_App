@@ -78,6 +78,13 @@ static byte g_timesDown[PLATFORM_GPIO_MAX];
 static byte g_timesUp[PLATFORM_GPIO_MAX];
 static byte g_lastValidState[PLATFORM_GPIO_MAX];
 
+inline int chVal_float2int(float f) // convert channel float value to int
+{
+	if ((f > 0.0f) && (f < 1.0f))   // set non-zero value to minimum 1.0
+		return 1;
+	else
+		return (int)f;
+}
 
 void PIN_SetupPins() {
 	int i;
@@ -497,7 +504,7 @@ void PIN_SetPinRoleForPinIndex(int index, int role) {
 				int channelValue;
 
 				channelIndex = PIN_GetPinChannelForPinIndex(index);
-				channelValue = g_channelValues[channelIndex];
+				channelValue = chVal_float2int(g_channelValues[channelIndex]);
 
 				HAL_PIN_Setup_Output(index);
 				if(role == IOR_LED_n || role == IOR_Relay_n) { 
@@ -560,7 +567,7 @@ void PIN_SetGenericDoubleClickCallback(void (*cb)(int pinIndex)) {
 void Channel_SaveInFlashIfNeeded(int ch) {
 	// save, if marked as save value in flash (-1)
 	if(g_cfg.startChannelValues[ch] == -1) {
-		HAL_FlashVars_SaveChannel(ch,g_channelValues[ch]);
+		HAL_FlashVars_SaveChannel(ch,chVal_float2int(g_channelValues[ch]));
 	}
 }
 static void Channel_OnChanged(int ch, float prevValue, int iFlags) {
@@ -643,7 +650,7 @@ int CHANNEL_Get(int ch) {
 		addLogAdv(LOG_ERROR, LOG_FEATURE_GENERAL,"CHANNEL_Get: Channel index %i is out of range <0,%i)\n\r",ch,CHANNEL_MAX);
 		return 0;
 	}
-	return g_channelValues[ch];
+	return chVal_float2int(g_channelValues[ch]);
 }
 
 void CHANNEL_Set(int ch, float iVal, int iFlags) {
@@ -702,7 +709,7 @@ void CHANNEL_AddClamped(int ch, int iVal, int min, int max) {
 	if(g_channelValues[ch]<min)
 		g_channelValues[ch] = min;
 
-	addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_AddClamped channel %i has changed to %i\n\r",ch,g_channelValues[ch]);
+	addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_AddClamped channel %i has changed to %f\n\r",ch,g_channelValues[ch]);
 
 	Channel_OnChanged(ch,prevValue,0);
 }
@@ -715,7 +722,7 @@ void CHANNEL_Add(int ch, int iVal) {
 	prevValue = g_channelValues[ch];
 	g_channelValues[ch] = g_channelValues[ch] + iVal;
 
-	addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_Add channel %i has changed to %i\n\r",ch,g_channelValues[ch]);
+	addLogAdv(LOG_INFO, LOG_FEATURE_GENERAL,"CHANNEL_Add channel %i has changed to %f\n\r",ch,g_channelValues[ch]);
 
 	Channel_OnChanged(ch,prevValue,0);
 }
