@@ -208,6 +208,9 @@ void LED_RunQuickColorLerp(int deltaMS) {
 	}
 #endif
 }
+
+int brightness_exponential_mode = 2;  // set exponential mode, 0=Off, 1=1% min PWM ratio, 2=0.1% min PWM ratio
+
 void apply_smart_light() {
 	int i;
 	int firstChannelIndex;
@@ -245,20 +248,24 @@ void apply_smart_light() {
 		}
 	} else {
 		for(i = 0; i < 5; i++) {
-			float raw, final;
+			float raw, final, pwm_min = 1.0f;
 
 			raw = baseColors[i];
 
 			if(g_lightEnableAll) {
 				// make brightness exponential:
-				float exponential_brightness = pow(1.04723f, g_brightness * 100.0f) / 100.0f - 0.00947f;
-				if (exponential_brightness < 0.001f)
-					exponential_brightness = 0.0f;
-
-				if (exponential_brightness > 1.0f)
-					exponential_brightness = 1.0f;
-
-				final = raw * exponential_brightness;
+				if (brightness_exponential_mode == 0) {
+					final = raw * g_brightness;
+				} else {
+					float expo_offset;
+					if (brightness_exponential_mode == 1) {
+						expo_offset = 0.0004;
+					} else {
+						expo_offset = 0.00947;
+						pwm_min = 0.1f;          // Extended minimum PWM ratio 0.1%
+					}
+					final = raw * (pow(1.04723f, g_brightness * 100.0f) / 100.0f - expo_offset);
+				}
 			} else {
 				final = 0;
 			}
@@ -281,6 +288,12 @@ void apply_smart_light() {
 			finalColors[i] = final;
 			finalRGBCW[i] = final;
 
+			final *= g_cfg_colorScaleToChannel;
+			if (final < pwm_min)
+				final = 0.0f;
+			if (final > 100.0f)
+				final = 100.0f;
+
 			channelToUse = firstChannelIndex + i;
 
 			// log printf with %f crashes N platform?
@@ -293,12 +306,12 @@ void apply_smart_light() {
 					// We don't have RGB channels
 					// so, do simple mapping
 					if(i == 3) {
-						CHANNEL_Set(firstChannelIndex+0, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+						CHANNEL_Set(firstChannelIndex+0, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 					} else if(i == 4) {
-						CHANNEL_Set(firstChannelIndex+1, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+						CHANNEL_Set(firstChannelIndex+1, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 					}
 				} else {
-					CHANNEL_Set(channelToUse, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+					CHANNEL_Set(channelToUse, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 				}
 			}
 		}
