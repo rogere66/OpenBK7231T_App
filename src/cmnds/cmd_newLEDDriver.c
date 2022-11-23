@@ -209,7 +209,7 @@ void LED_RunQuickColorLerp(int deltaMS) {
 #endif
 }
 
-int brightness_exponential_mode = 2;  // set exponential mode, 0=Off, 1=1% min PWM ratio, 2=0.1% min PWM ratio
+int increased_min_brightness = 0;  // set minimum brightness level (reduce low end dead-band): 0 = 0.1% 1 = 1%
 
 void apply_smart_light() {
 	int i;
@@ -254,15 +254,12 @@ void apply_smart_light() {
 
 			if(g_lightEnableAll) {
 				// make brightness exponential:
-				if (brightness_exponential_mode == 0) {
-					final = raw * g_brightness;
+				if (g_brightness == 0.0f) {
+					final = 0.0f;
 				} else {
-					float expo_offset;
-					if (brightness_exponential_mode == 1) {
-						expo_offset = 0.0004;
-					} else {
-						expo_offset = 0.00947;
-						pwm_min = 0.1f;          // Extended minimum PWM ratio 0.1%
+					float expo_offset = 0.00947f;
+					if (increased_min_brightness > 0) {
+						expo_offset = 0.0f;
 					}
 					final = raw * (pow(1.04723f, g_brightness * 100.0f) / 100.0f - expo_offset);
 				}
@@ -289,8 +286,6 @@ void apply_smart_light() {
 			finalRGBCW[i] = final;
 
 			final *= g_cfg_colorScaleToChannel;
-			if (final < pwm_min)
-				final = 0.0f;
 			if (final > 100.0f)
 				final = 100.0f;
 
