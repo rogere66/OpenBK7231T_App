@@ -248,7 +248,7 @@ void apply_smart_light() {
 		}
 	} else {
 		for(i = 0; i < 5; i++) {
-			float raw, final, pwm_min = 1.0f;
+			float raw, final;
 
 			raw = baseColors[i];
 
