@@ -258,6 +258,24 @@ void LED_RunQuickColorLerp(int deltaMS) {
 	}
 #endif
 }
+
+int exponential_mode = 2;
+
+/* exponential mode command handler, usage: led_expoMode <0|1|2|3|4>
+   exponential modes: 0 = Off
+                      1 = 1% min brightness with moderate exponential
+                      2 = 1% min brightness with full exponential
+                      3 = 0.1% min brightness with moderate exponential
+                      4 = 0.1% min brightness with full exponential
+*/
+static commandResult_t exponentialMode (const void *context, const char *cmd, const char *args, int cmdFlags) {
+	int mode = atoi (args);
+	if((mode >= 0) && (mode <= 4)) {
+		exponential_mode = mode;
+	}
+	return CMD_RES_OK;
+}
+
 void apply_smart_light() {
 	int i;
 	int firstChannelIndex;
@@ -308,11 +326,32 @@ void apply_smart_light() {
 			float raw, final;
 
 			raw = baseColors[i];
+			final = 0.0f;
 
 			if(g_lightEnableAll) {
-				final = raw * g_brightness;
-			} else {
-				final = 0;
+				// make brightness exponential:
+				if (exponential_mode == 0) {
+					final = raw * g_brightness;
+				} else if (g_brightness == 0.0f) {
+					final = 0.0f;
+				} else {
+					float expo_base;
+					float expo_factor;
+					float expo_offset = 0.0;
+					if ((exponential_mode == 1) || (exponential_mode == 2)) {
+						expo_offset = 0.009f;
+					}
+					if ((exponential_mode == 1) || (exponential_mode == 3)) {
+						expo_base    =  1.2f;     // moderate exponential
+						expo_factor  = 15.32f;
+						expo_offset -=  0.06609f;
+					} else {
+						expo_base    =  1.06f;    // full exponential
+						expo_factor  = 74.115f;
+						expo_offset -=  0.013f;
+					}
+					final = raw * (pow(expo_base, g_brightness * expo_factor) / expo_factor + expo_offset);
+				}
 			}
 			if(g_lightMode == Light_Temperature) {
 				// skip channels 0, 1, 2
@@ -333,6 +372,10 @@ void apply_smart_light() {
 			finalColors[i] = final;
 			finalRGBCW[i] = final;
 
+			final *= g_cfg_colorScaleToChannel;
+			if (final > 100.0f)
+				final = 100.0f;
+
 			channelToUse = firstChannelIndex + i;
 
 			// log printf with %f crashes N platform?
@@ -345,12 +388,12 @@ void apply_smart_light() {
 					// We don't have RGB channels
 					// so, do simple mapping
 					if(i == 3) {
-						CHANNEL_Set(firstChannelIndex+0, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+						CHANNEL_Set(firstChannelIndex+0, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 					} else if(i == 4) {
-						CHANNEL_Set(firstChannelIndex+1, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+						CHANNEL_Set(firstChannelIndex+1, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 					}
 				} else {
-					CHANNEL_Set(channelToUse, final * g_cfg_colorScaleToChannel, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
+					CHANNEL_Set(channelToUse, final, CHANNEL_SET_FLAG_SKIP_MQTT | CHANNEL_SET_FLAG_SILENT);
 				}
 			}
 		}
@@ -1133,6 +1176,11 @@ void NewLED_InitCommands(){
 	//cmddetail:"fn":"lerpSpeed","file":"cmnds/cmd_newLEDDriver.c","requires":"",
 	//cmddetail:"examples":""}
     CMD_RegisterCommand("led_lerpSpeed", "", lerpSpeed, NULL, NULL);
+	//cmddetail:{"name":"led_expoMode","args":"",
+	//cmddetail:"descr":"set brightness exponential mode 0..4",
+	//cmddetail:"fn":"exponentialMode","file":"cmnds/cmd_newLEDDriver.c","requires":"",
+	//cmddetail:"examples":"led_expoMode 4"}
+    CMD_RegisterCommand("led_expoMode", "", exponentialMode, NULL, NULL);
 
 	// HSBColor 360,100,100 - red
 	// HSBColor 90,100,100 - green
