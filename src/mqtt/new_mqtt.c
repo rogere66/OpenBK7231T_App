@@ -2215,3 +2215,4 @@ bool MQTT_IsReady() {
 	return mqtt_client && res;
 }
 
+#include "../userExtension_mqtt.h" // additional code used by userExtension.c
